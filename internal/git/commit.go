@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/0xmhha/commitflow/internal/validate"
 )
 
 // Commit holds the metadata for a single git commit.
@@ -39,6 +41,12 @@ func (r *Repository) ListCommits(ctx context.Context, opts CommitListOpts) ([]st
 	if opts.Last > 0 {
 		args = append(args, "-n", fmt.Sprintf("%d", opts.Last), "HEAD")
 	} else {
+		if err := validate.Ref(opts.From); err != nil {
+			return nil, fmt.Errorf("list commits from: %w", err)
+		}
+		if err := validate.Ref(opts.To); err != nil {
+			return nil, fmt.Errorf("list commits to: %w", err)
+		}
 		args = append(args, fmt.Sprintf("%s..%s", opts.From, opts.To))
 	}
 
@@ -58,6 +66,10 @@ func (r *Repository) ListCommits(ctx context.Context, opts CommitListOpts) ([]st
 // The format string uses NUL-separated fields to safely handle multi-line
 // body content.
 func (r *Repository) GetCommit(ctx context.Context, hash string) (*Commit, error) {
+	if err := validate.Ref(hash); err != nil {
+		return nil, fmt.Errorf("get commit: %w", err)
+	}
+
 	// Use %x00 (NUL) as field separator to avoid conflicts with newlines in
 	// the commit body. We request exactly 7 fields.
 	const format = "%H%x00%P%x00%an%x00%ae%x00%aI%x00%s%x00%b"
@@ -99,6 +111,12 @@ func parseCommit(raw string) (*Commit, error) {
 
 // IsAncestor reports whether ancestor is a reachable ancestor of descendant.
 func (r *Repository) IsAncestor(ctx context.Context, ancestor, descendant string) (bool, error) {
+	if err := validate.Ref(ancestor); err != nil {
+		return false, fmt.Errorf("is-ancestor: %w", err)
+	}
+	if err := validate.Ref(descendant); err != nil {
+		return false, fmt.Errorf("is-ancestor: %w", err)
+	}
 	_, err := r.runGit(ctx, "merge-base", "--is-ancestor", ancestor, descendant)
 	if err != nil {
 		// Exit code 1 means "not an ancestor" — not a hard error.
@@ -112,6 +130,9 @@ func (r *Repository) IsAncestor(ctx context.Context, ancestor, descendant string
 
 // CherryPick applies the changes introduced by hash onto HEAD.
 func (r *Repository) CherryPick(ctx context.Context, hash string) error {
+	if err := validate.Ref(hash); err != nil {
+		return fmt.Errorf("cherry-pick: %w", err)
+	}
 	if _, err := r.runGit(ctx, "cherry-pick", hash); err != nil {
 		return fmt.Errorf("cherry-pick %q: %w", hash, err)
 	}
@@ -129,6 +150,9 @@ func (r *Repository) AbortCherryPick(ctx context.Context) error {
 
 // CreateBranch creates a new branch at HEAD and checks it out.
 func (r *Repository) CreateBranch(ctx context.Context, name string) error {
+	if err := validate.Ref(name); err != nil {
+		return fmt.Errorf("create branch: %w", err)
+	}
 	if _, err := r.runGit(ctx, "checkout", "-b", name); err != nil {
 		return fmt.Errorf("create branch %q: %w", name, err)
 	}

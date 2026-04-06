@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -43,7 +42,7 @@ func init() {
 	rootCmd.AddCommand(reportCmd)
 }
 
-func runReport(_ *cobra.Command, args []string) error {
+func runReport(cmd *cobra.Command, args []string) error {
 	repoPath := args[0]
 	if repoPath == "" {
 		return fmt.Errorf("repo-path must not be empty")
@@ -64,7 +63,7 @@ func runReport(_ *cobra.Command, args []string) error {
 	}
 
 	store := storage.NewCommitStore(db)
-	ctx := context.Background()
+	ctx := cmd.Context()
 
 	filter := buildReportFilter(repoPath)
 	analyses, err := store.ListAnalyses(ctx, filter)

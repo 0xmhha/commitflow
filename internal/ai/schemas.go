@@ -1,5 +1,7 @@
 package ai
 
+import "fmt"
+
 // CommitAnalysisOutput is the Go type matching the commit analysis JSON schema.
 type CommitAnalysisOutput struct {
 	Category              string   `json:"category"`
@@ -155,4 +157,48 @@ func ValidConflictLikelihoods() []string {
 		ConflictMedium,
 		ConflictHigh,
 	}
+}
+
+const maxStringLen = 10000
+
+// ValidateCommitAnalysis checks that AI-generated commit analysis output
+// contains valid enum values and reasonable field ranges.
+func ValidateCommitAnalysis(o *CommitAnalysisOutput) error {
+	if !isValidValue(o.Category, ValidCategories()) {
+		return fmt.Errorf("invalid category: %q", o.Category)
+	}
+	if o.ImpactScore < 1 || o.ImpactScore > 10 {
+		return fmt.Errorf("impact_score must be 1-10, got %d", o.ImpactScore)
+	}
+	if len(o.Summary) > maxStringLen {
+		o.Summary = o.Summary[:maxStringLen]
+	}
+	if len(o.DetailedAnalysis) > maxStringLen {
+		o.DetailedAnalysis = o.DetailedAnalysis[:maxStringLen]
+	}
+	return nil
+}
+
+// ValidateApplicability checks that AI-generated applicability output
+// contains valid enum values and reasonable field ranges.
+func ValidateApplicability(o *ApplicabilityOutput) error {
+	if !isValidValue(o.Status, ValidStatuses()) {
+		return fmt.Errorf("invalid status: %q", o.Status)
+	}
+	if o.RelevanceScore < 1 || o.RelevanceScore > 10 {
+		return fmt.Errorf("relevance_score must be 1-10, got %d", o.RelevanceScore)
+	}
+	if !isValidValue(o.ConflictLikelihood, ValidConflictLikelihoods()) {
+		return fmt.Errorf("invalid conflict_likelihood: %q", o.ConflictLikelihood)
+	}
+	return nil
+}
+
+func isValidValue(val string, valid []string) bool {
+	for _, v := range valid {
+		if val == v {
+			return true
+		}
+	}
+	return false
 }

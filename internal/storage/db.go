@@ -3,6 +3,8 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
+	"os"
 
 	_ "modernc.org/sqlite"
 )
@@ -24,7 +26,26 @@ func OpenDB(path string) (*sql.DB, error) {
 		return nil, fmt.Errorf("ping sqlite db: %w", err)
 	}
 
+	// Enforce restrictive file permissions (owner-only read/write).
+	enforceFilePermissions(path)
+
 	return db, nil
+}
+
+// enforceFilePermissions restricts the database file and its WAL/SHM
+// sidecar files to owner-only read/write (0600).
+func enforceFilePermissions(path string) {
+	for _, p := range []string{path, path + "-wal", path + "-shm"} {
+		info, err := os.Stat(p)
+		if err != nil {
+			continue // file may not exist yet
+		}
+		if info.Mode().Perm()&0o077 != 0 {
+			if err := os.Chmod(p, 0o600); err != nil {
+				slog.Debug("could not enforce db file permissions", "path", p, "error", err)
+			}
+		}
+	}
 }
 
 // CloseDB closes the given database connection.

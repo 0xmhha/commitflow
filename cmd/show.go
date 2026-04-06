@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -29,7 +28,7 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 }
 
-func runShow(_ *cobra.Command, args []string) error {
+func runShow(cmd *cobra.Command, args []string) error {
 	commitHash := args[0]
 	if commitHash == "" {
 		return fmt.Errorf("commit-hash must not be empty")
@@ -50,7 +49,7 @@ func runShow(_ *cobra.Command, args []string) error {
 	}
 
 	store := storage.NewCommitStore(db)
-	ctx := context.Background()
+	ctx := cmd.Context()
 
 	result, err := store.GetAnalysis(ctx, showRepo, commitHash)
 	if err != nil {

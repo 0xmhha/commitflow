@@ -64,7 +64,34 @@ func LoadConfig(path string) (Config, error) {
 
 	mergeEnv(&cfg)
 
+	if err := ValidateConfig(cfg); err != nil {
+		return Config{}, fmt.Errorf("config validation: %w", err)
+	}
+
 	return cfg, nil
+}
+
+// ValidateConfig checks that all configuration values are within sensible ranges.
+func ValidateConfig(cfg Config) error {
+	if cfg.MaxDiffLines < 0 {
+		return fmt.Errorf("max_diff_lines must be non-negative, got %d", cfg.MaxDiffLines)
+	}
+	if cfg.Budget < 0 {
+		return fmt.Errorf("budget must be non-negative, got %f", cfg.Budget)
+	}
+	if cfg.MaxBudgetPerCall < 0 {
+		return fmt.Errorf("max_budget_per_call must be non-negative, got %f", cfg.MaxBudgetPerCall)
+	}
+	if cfg.MaxRetries < 0 || cfg.MaxRetries > 100 {
+		return fmt.Errorf("max_retries must be between 0 and 100, got %d", cfg.MaxRetries)
+	}
+	if cfg.Delay < 0 {
+		return fmt.Errorf("delay must be non-negative, got %v", cfg.Delay)
+	}
+	if cfg.RetryBackoff < 0 {
+		return fmt.Errorf("retry_backoff must be non-negative, got %v", cfg.RetryBackoff)
+	}
+	return nil
 }
 
 // EnsureDBDir creates the parent directory of dbPath if it does not exist.

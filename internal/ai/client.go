@@ -183,7 +183,8 @@ func (c *Client) execClaude(ctx context.Context, prompt, jsonSchema string) (*Re
 		if isAuthError(stderrStr) {
 			return nil, ErrClaudeAuth
 		}
-		return nil, fmt.Errorf("claude exec: %w: %s", err, stderrStr)
+		slog.Debug("claude command failed", "stderr", stderrStr)
+		return nil, fmt.Errorf("claude exec: %w", err)
 	}
 
 	if c.verbose {

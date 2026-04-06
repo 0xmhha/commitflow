@@ -298,6 +298,12 @@ func (e *Engine) callAI(
 			Err: fmt.Errorf("analyze commit %s: parse ai output: %w", hash, err),
 		}
 	}
+	if err := ai.ValidateCommitAnalysis(&output); err != nil {
+		return nil, &AnalysisError{
+			CommitHash: hash, Phase: "ai",
+			Err: fmt.Errorf("analyze commit %s: invalid ai output: %w", hash, err),
+		}
+	}
 	return &output, nil
 }
 

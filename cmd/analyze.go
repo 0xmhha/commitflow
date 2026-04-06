@@ -124,7 +124,7 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ctx := context.Background()
+	ctx := cmd.Context()
 	result, err := runEngineAnalysis(ctx, engine, cmd)
 	if err != nil {
 		return err

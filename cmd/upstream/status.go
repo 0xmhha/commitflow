@@ -28,9 +28,9 @@ func init() {
 	UpstreamCmd.AddCommand(statusCmd)
 }
 
-func runStatus(_ *cobra.Command, _ []string) error {
+func runStatus(cmd *cobra.Command, _ []string) error {
 	cfg := GetConfig()
-	ctx := context.Background()
+	ctx := cmd.Context()
 
 	db, err := openDB(cfg.DBPath)
 	if err != nil {

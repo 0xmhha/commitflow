@@ -27,14 +27,14 @@ func init() {
 	UpstreamCmd.AddCommand(applyCmd)
 }
 
-func runApply(_ *cobra.Command, args []string) error {
+func runApply(cmd *cobra.Command, args []string) error {
 	hash := args[0]
 	if hash == "" {
 		return fmt.Errorf("commit-hash must not be empty")
 	}
 
 	cfg := GetConfig()
-	ctx := context.Background()
+	ctx := cmd.Context()
 
 	db, err := openDB(cfg.DBPath)
 	if err != nil {

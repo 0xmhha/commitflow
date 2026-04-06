@@ -37,7 +37,7 @@ func init() {
 
 func runAuto(cmd *cobra.Command, _ []string) error {
 	cfg := GetConfig()
-	ctx := context.Background()
+	ctx := cmd.Context()
 
 	if !cfg.DryRun {
 		if err := ai.CheckClaude(); err != nil {

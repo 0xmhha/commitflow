@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/0xmhha/commitflow/internal/validate"
 )
 
 const (
@@ -12,6 +14,9 @@ const (
 	DefaultMaxDiffLines = 5000
 	// MediumDiffThreshold is the line count above which only Go files are kept.
 	MediumDiffThreshold = 20000
+	// EmptyTreeHash is git's well-known SHA-1 empty tree object hash, used as
+	// the diff base for root commits (commits with no parent).
+	EmptyTreeHash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 )
 
 // DiffResult holds the outcome of a commit diff extraction.
@@ -48,6 +53,10 @@ type DiffOpts struct {
 // Tier 2 (< MediumDiffThreshold): .go files only, rest summarised.
 // Tier 3 (>= MediumDiffThreshold): stat summary only, marked as truncated.
 func (r *Repository) GetCommitDiff(ctx context.Context, hash string, opts DiffOpts) (*DiffResult, error) {
+	if err := validate.Ref(hash); err != nil {
+		return nil, fmt.Errorf("get commit diff: %w", err)
+	}
+
 	maxLines := opts.MaxDiffLines
 	if maxLines <= 0 {
 		maxLines = DefaultMaxDiffLines
@@ -219,7 +228,7 @@ func (r *Repository) parentRef(ctx context.Context, hash string) (string, error)
 	out, err := r.runGit(ctx, "rev-parse", "--verify", hash+"^")
 	if err != nil {
 		// Root commit: diff against the empty tree.
-		return "4b825dc642cb6eb9a060e54bf8d69288fbee4904", nil
+		return EmptyTreeHash, nil
 	}
 	return out, nil
 }

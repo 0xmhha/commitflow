@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+
+	"github.com/0xmhha/commitflow/internal/validate"
 )
 
 // DiffStats holds line-level change statistics for a commit.
@@ -132,14 +134,18 @@ SELECT id, repo_path, commit_hash, parent_hash, author, author_email,
        summary, detailed_analysis, impact_score, breaking_changes,
        packages_affected, created_at
 FROM commit_analyses
-WHERE repo_path = ? AND commit_hash LIKE ? || '%'
+WHERE repo_path = ? AND commit_hash LIKE ? || '%' ESCAPE '\'
 LIMIT 1`
 
 	var row *sql.Row
 	if len(hash) >= 40 {
 		row = s.db.QueryRowContext(ctx, exactQuery, repoPath, hash)
+	} else if validate.IsHexString(hash) {
+		// Short hex hash: use prefix LIKE lookup with escaped wildcards.
+		row = s.db.QueryRowContext(ctx, prefixQuery, repoPath, validate.EscapeLikePattern(hash))
 	} else {
-		row = s.db.QueryRowContext(ctx, prefixQuery, repoPath, hash)
+		// Non-hex short string (e.g. branch name): try exact match only.
+		row = s.db.QueryRowContext(ctx, exactQuery, repoPath, hash)
 	}
 
 	analysis, err := scanCommitAnalysis(row)

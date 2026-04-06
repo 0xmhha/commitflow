@@ -35,7 +35,7 @@ func init() {
 
 func runInit(cmd *cobra.Command, _ []string) error {
 	cfg := GetConfig()
-	ctx := context.Background()
+	ctx := cmd.Context()
 
 	forkRepo, err := git.NewRepository(initForkPath)
 	if err != nil {

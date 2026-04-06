@@ -21,3 +21,8 @@ vendor/
 *~
 
 .claude/settings.local.json
+
+# Environment files
+.env
+.env.*
+!.env.example
